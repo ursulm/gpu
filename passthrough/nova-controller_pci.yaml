@@ -1,0 +1,38 @@
+- name: passthrough_pci_forController
+  hosts: localhost
+  become: yes
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+
+
+#  - name: change driver for device
+#    shell: echo {{ vendor_id  }} {{ product_id  }} | sudo tee /sys/bus/pci/drivers/vfio-pci/new_id
+
+  - name:   add/replace in nova.conf 
+    community.general.ini_file:
+      path: /etc/nova/nova.conf
+      section: filter_scheduler
+      option: available_filters
+      value: nova.scheduler.filters.all_filters
+
+  - name:  add/replace in nova.conf alias  #изменяет/добавляет значение в nova.conf
+    community.general.ini_file:
+      path: /etc/nova/nova.conf
+      section: pci
+      option: alias
+      value: { "vendor_id":"{{ vendor_id  }}", "product_id":"{{ product_id  }}", "device_type":"{{ device_type  }}", "name":"{{ name_pci  }}" }
+
+
+  - name: Restart nova-api
+    ansible.builtin.systemd:
+      state: restarted
+      daemon_reload: true
+      name: nova-api
+
+  - name: Restart nova-scheduler
+    ansible.builtin.systemd:
+      state: restarted
+      daemon_reload: true
+      name: nova-sheduler

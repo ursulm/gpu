@@ -1,0 +1,7 @@
+vendor_id: 10de
+product_id: 1db4
+device_type: type-PF #может быть равна также type-PF и type-VF
+name_pci: grid
+black_driver: "nvidiafb,nouveau"
+all_ven_prod: "10de:1db4,10de:1db4"
+dev_pci:

@@ -1,0 +1,41 @@
+- name: passthrough_pci_forCompute
+  hosts: localhost
+  become: yes
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+
+  - name: add kernel options #  при повторном выполнении задваиваются параметры, добавляет значения
+    replace:
+      path: /root/test
+      regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$'
+      replace: 'GRUB_CMDLINE_LINUX_DEFAULT="\1 intel_iommu=on vfio-pci.ids={{ all_ven_prod  }}
+                vfio_iommu_type1.allow_unsafe_interrupts=1 modprobe.blacklist={{ black_driver  }} iommu=pt"'
+      backup: true
+
+  - name: update-grub # run update grub config
+    shell: update-grub2
+
+#  - name: change driver for device
+#    shell: echo {{ vendor_id  }} {{ product_id  }} | sudo tee /sys/bus/pci/drivers/vfio-pci/new_id
+
+  - name:   add/replace in nova.conf passthrough_whitelist #изменяет/добавляет значение в nova.conf
+    community.general.ini_file:
+      path: /etc/nova/nova.conf
+      section: pci
+      option: passthrough_whitelist
+      value: { "vendor_id": "{{ vendor_id |string }}", "product_id": "{{ product_id  }}" }
+
+  - name:  add/replace in nova.conf alias  #изменяет/добавляет значение в nova.conf
+    community.general.ini_file:
+      path: /etc/nova/nova.conf
+      section: pci
+      option: alias
+      value: { "vendor_id":"{{ vendor_id  }}", "product_id":"{{ product_id  }}", "device_type":"{{ device_type  }}", "name":"{{ name_pci  }}" }
+
+#  - name: Restart nova-compute
+#    ansible.builtin.systemd:
+#      state: restarted
+#      daemon_reload: true
+#      name: nova-compute
